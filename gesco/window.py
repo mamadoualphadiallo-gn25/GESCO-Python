@@ -5,7 +5,7 @@ from .management import ManagementPage
 from .subjects import SubjectsPage
 from .grades import GradesPage
 from .settings import SettingsPage
-
+from .results_page import ResultsPage
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -42,17 +42,18 @@ class MainWindow(QMainWindow):
         self.classes = ManagementPage("classes")
         self.subjects = SubjectsPage()
         self.grades = GradesPage()
+        self.results = ResultsPage()
         self.settings = SettingsPage()
-        for page in [self.dashboard, self.students, self.classes, self.subjects, self.grades, self.settings]:
+        for page in [self.dashboard, self.students, self.classes, self.subjects, self.grades, self.results, self.settings]:
             self.pages.addWidget(page)
         for label, index in [("Tableau de bord", 0), ("Élèves", 1), ("Classes", 2),
-                             ("Matières", 3), ("Notes", 4), ("Paramètres", 5)]:
+                             ("Matières", 3), ("Notes", 4), ("Résultats", 5), ("Paramètres", 6)]:
             button = QPushButton(label)
             button.setStyleSheet("color:white; background:transparent; border:0; text-align:left; margin:3px 8px;")
             button.clicked.connect(lambda checked=False, i=index: self.pages.setCurrentIndex(i))
             side_layout.addWidget(button)
         side_layout.addStretch()
-        version = QLabel("Version 1.0.0 • Hors ligne")
+        version = QLabel("Version 1.1.0 • Hors ligne")
         version.setStyleSheet("color:#aab7cc; padding:14px;")
         side_layout.addWidget(version)
         layout.addWidget(sidebar)
@@ -81,16 +82,5 @@ class MainWindow(QMainWindow):
             card_layout.addWidget(value)
             cards.addWidget(card)
         layout.addLayout(cards)
-        layout.addStretch()
-        return page
-
-    def _placeholder(self, title, description):
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(32, 28, 32, 28)
-        heading = QLabel(title)
-        heading.setObjectName("contentTitle")
-        layout.addWidget(heading)
-        layout.addWidget(QLabel(description))
         layout.addStretch()
         return page
