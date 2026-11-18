@@ -1,9 +1,12 @@
 name: Build Windows
 on:
-  workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*"
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: windows-latest
@@ -23,3 +26,5 @@ jobs:
         with:
           name: GESCO-Windows
           path: dist/GESCO/
+          if-no-files-found: error
+          retention-days: 14
