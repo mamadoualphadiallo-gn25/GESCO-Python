@@ -1,10 +1,9 @@
 """Fenêtre principale de GESCO."""
-from PySide6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QStackedWidget, QFrame
-)
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QStackedWidget, QFrame
 from .database import fetch_one
 from .management import ManagementPage
+from .subjects import SubjectsPage
+from .grades import GradesPage
 
 
 class MainWindow(QMainWindow):
@@ -17,17 +16,14 @@ class MainWindow(QMainWindow):
             QMainWindow, QWidget { background: #f4f6fb; color: #182235; font-family: Segoe UI; }
             #sidebar { background: #17243a; }
             #brand { color: white; font-size: 23px; font-weight: 700; padding: 20px; }
-            QPushButton { background: #ffffff; border: 1px solid #dce2ec; border-radius: 8px;
-                          padding: 10px 14px; font-size: 13px; }
+            QPushButton { background: #ffffff; border: 1px solid #dce2ec; border-radius: 8px; padding: 10px 14px; font-size: 13px; }
             QPushButton:hover { background: #eaf0ff; }
             #contentTitle { font-size: 25px; font-weight: 700; }
             #statCard { background: white; border: 1px solid #e4e9f1; border-radius: 12px; padding: 18px; }
             #statValue { font-size: 28px; font-weight: 700; color: #3157c8; }
-            QTableWidget { background:white; border:1px solid #e4e9f1; border-radius:10px;
-                           gridline-color:#edf0f5; selection-background-color:#dce7ff; }
+            QTableWidget { background:white; border:1px solid #e4e9f1; border-radius:10px; gridline-color:#edf0f5; selection-background-color:#dce7ff; }
             QHeaderView::section { background:#edf1f8; padding:9px; border:0; font-weight:600; }
-            QLineEdit, QComboBox, QDateEdit { background:white; border:1px solid #dce2ec;
-                          border-radius:7px; padding:8px; }
+            QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox { background:white; border:1px solid #dce2ec; border-radius:7px; padding:8px; }
         """)
         root = QWidget()
         layout = QHBoxLayout(root)
@@ -43,12 +39,13 @@ class MainWindow(QMainWindow):
         self.dashboard = self._dashboard()
         self.students = ManagementPage("students")
         self.classes = ManagementPage("classes")
-        self.notes = self._placeholder("Gestion des notes", "La saisie des évaluations sera ajoutée dans la prochaine étape.")
-        self.settings = self._placeholder("Paramètres", "Configuration de l'établissement et du barème.")
-        for page in [self.dashboard, self.students, self.classes, self.notes, self.settings]:
+        self.subjects = SubjectsPage()
+        self.grades = GradesPage()
+        self.settings = self._placeholder("Paramètres", "La configuration détaillée sera ajoutée dans la prochaine étape.")
+        for page in [self.dashboard, self.students, self.classes, self.subjects, self.grades, self.settings]:
             self.pages.addWidget(page)
         for label, index in [("Tableau de bord", 0), ("Élèves", 1), ("Classes", 2),
-                             ("Notes", 3), ("Paramètres", 4)]:
+                             ("Matières", 3), ("Notes", 4), ("Paramètres", 5)]:
             button = QPushButton(label)
             button.setStyleSheet("color:white; background:transparent; border:0; text-align:left; margin:3px 8px;")
             button.clicked.connect(lambda checked=False, i=index: self.pages.setCurrentIndex(i))
@@ -70,11 +67,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(heading)
         layout.addWidget(QLabel("Vue générale de votre établissement"))
         cards = QHBoxLayout()
-        for label, query in [
-            ("Élèves inscrits", "SELECT COUNT(*) FROM students WHERE active=1"),
-            ("Classes", "SELECT COUNT(*) FROM classes"),
-            ("Matières", "SELECT COUNT(*) FROM subjects"),
-        ]:
+        for label, query in [("Élèves inscrits", "SELECT COUNT(*) FROM students WHERE active=1"),
+                             ("Classes", "SELECT COUNT(*) FROM classes"),
+                             ("Matières", "SELECT COUNT(*) FROM subjects")]:
             card = QFrame()
             card.setObjectName("statCard")
             card_layout = QVBoxLayout(card)
