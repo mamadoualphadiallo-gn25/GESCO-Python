@@ -4,6 +4,7 @@ from .database import fetch_one
 from .management import ManagementPage
 from .subjects import SubjectsPage
 from .grades import GradesPage
+from .settings import SettingsPage
 
 
 class MainWindow(QMainWindow):
@@ -41,7 +42,7 @@ class MainWindow(QMainWindow):
         self.classes = ManagementPage("classes")
         self.subjects = SubjectsPage()
         self.grades = GradesPage()
-        self.settings = self._placeholder("Paramètres", "La configuration détaillée sera ajoutée dans la prochaine étape.")
+        self.settings = SettingsPage()
         for page in [self.dashboard, self.students, self.classes, self.subjects, self.grades, self.settings]:
             self.pages.addWidget(page)
         for label, index in [("Tableau de bord", 0), ("Élèves", 1), ("Classes", 2),
