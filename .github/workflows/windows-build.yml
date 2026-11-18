@@ -1,10 +1,9 @@
-name: Build Windows
+name: Build Windows Installer
+
 on:
   push:
-    branches:
-      - main
-    tags:
-      - "v*"
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 jobs:
@@ -12,19 +11,39 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Installer Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Installer les dépendances
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
-      - name: Compiler GESCO
-        run: pyinstaller --noconfirm --clean --windowed --name GESCO --collect-all PySide6 main.py
-      - name: Archiver l'application
+          python -m pip install -r requirements.txt pyinstaller
+      - name: Compiler GESCO avec les bibliothèques Qt
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --windowed --onedir --name GESCO --collect-all PySide6 --collect-all shiboken6 --hidden-import PySide6.QtCore --hidden-import PySide6.QtGui --hidden-import PySide6.QtWidgets main.py
+          if (!(Test-Path "dist/GESCO/GESCO.exe")) { throw "GESCO.exe absent après compilation" }
+      - name: Télécharger le runtime Microsoft Visual C++
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer/prerequisites | Out-Null
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "installer/prerequisites/VC_redist.x64.exe"
+      - name: Installer Inno Setup
+        shell: pwsh
+        run: choco install innosetup --yes --no-progress
+      - name: Construire le programme d'installation
+        shell: pwsh
+        run: |
+          $iscc = Get-ChildItem -Path "C:\Program Files*" -Filter "ISCC.exe" -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.FullName -match "Inno Setup 6" } | Select-Object -First 1 -ExpandProperty FullName
+          if (!$iscc) { throw "Inno Setup Compiler introuvable" }
+          & $iscc installer/GESCO.iss
+          if (!(Test-Path "dist/Setup-GESCO.exe")) { throw "Setup-GESCO.exe absent" }
+      - name: Publier le fichier d'installation
         uses: actions/upload-artifact@v4
         with:
-          name: GESCO-Windows
-          path: dist/GESCO/
+          name: GESCO-Setup-Windows
+          path: dist/Setup-GESCO.exe
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 30
