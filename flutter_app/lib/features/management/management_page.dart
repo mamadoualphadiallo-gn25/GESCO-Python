@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart' as drift;
 import 'package:flutter/material.dart';
 import '../../data/local/app_database.dart';
 import '../../app/theme/app_theme.dart';
@@ -84,6 +83,7 @@ class _ManagementPageState extends State<ManagementPage> {
       final args = columns.map((key) {
         final value = values[key]!;
         if (value.isEmpty) return null;
+        if (definition.dateKeys.contains(key)) return DateTime.parse(value).millisecondsSinceEpoch;
         if (definition.numericKeys.contains(key)) return int.tryParse(value) ?? double.tryParse(value);
         return value;
       }).toList();
@@ -176,12 +176,13 @@ class _Field {
 }
 
 class _Definition {
-  const _Definition({required this.title, required this.subtitle, required this.table, required this.query, required this.fields, required this.icon, required this.display, this.numericKeys = const {}});
+  const _Definition({required this.title, required this.subtitle, required this.table, required this.query, required this.fields, required this.icon, required this.display, this.numericKeys = const {}, this.dateKeys = const {}});
   final String title, subtitle, table, query;
   final List<_Field> fields;
   final IconData icon;
   final String Function(Map<String, Object?>) display;
   final Set<String> numericKeys;
+  final Set<String> dateKeys;
 }
 
 const _definitions = <GescoSection, _Definition>{
