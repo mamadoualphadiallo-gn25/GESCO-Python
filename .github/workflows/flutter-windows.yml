@@ -1,0 +1,39 @@
+name: GESCO Flutter Windows
+on:
+  push:
+    paths:
+      - "flutter_app/**"
+      - ".github/workflows/flutter-windows.yml"
+  pull_request:
+    paths:
+      - "flutter_app/**"
+      - ".github/workflows/flutter-windows.yml"
+  workflow_dispatch:
+jobs:
+  test-and-build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: flutter_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Generate Drift database
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Analyze
+        run: flutter analyze
+      - name: Test
+        run: flutter test
+      - name: Build Windows
+        run: flutter build windows --release
+      - name: Upload Windows application
+        uses: actions/upload-artifact@v4
+        with:
+          name: GESCO-Flutter-Windows
+          path: flutter_app/build/windows/x64/runner/Release/
+          retention-days: 14
