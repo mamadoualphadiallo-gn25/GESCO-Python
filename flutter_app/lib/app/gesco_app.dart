@@ -4,6 +4,7 @@ import '../data/local/app_database.dart';
 import '../features/management/management_page.dart';
 import '../features/grades/grades_page.dart';
 import '../features/results/rankings_page.dart';
+import '../features/printing/teacher_sheet_page.dart';
 import 'theme/app_theme.dart';
 
 class GescoApp extends StatelessWidget {
@@ -23,7 +24,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   int selected = 0;
-  static const labels = ['Tableau de bord', 'Élèves', 'Classes', 'Matières', 'Notes', 'Classements', 'Bulletins', 'Années scolaires'];
+  static const labels = ['Tableau de bord', 'Élèves', 'Classes', 'Matières', 'Notes', 'Classements', 'Fiches professeurs', 'Années scolaires'];
   static const icons = [Icons.dashboard_outlined, Icons.people_outline, Icons.meeting_room_outlined, Icons.menu_book_outlined, Icons.edit_note_outlined, Icons.leaderboard_outlined, Icons.description_outlined, Icons.calendar_month_outlined];
 
   @override
