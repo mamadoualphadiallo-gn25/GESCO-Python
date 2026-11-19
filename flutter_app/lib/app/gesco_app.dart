@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/local/app_database.dart';
 import '../features/management/management_page.dart';
+import '../features/grades/grades_page.dart';
 import 'theme/app_theme.dart';
 
 class GescoApp extends StatelessWidget {
@@ -36,7 +37,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       page = ManagementPage(database: db, section: GescoSection.subjects);
     } else if (selected == 7) {
       page = ManagementPage(database: db, section: GescoSection.years);
-    } else if (selected == 0) {
+    } else if (selected == 4) {\n      page = GradesPage(database: db);\n    } else if (selected == 0) {
       page = _DashboardContent(database: db);
     } else {
       page = _ComingSoonPage(title: labels[selected]);
