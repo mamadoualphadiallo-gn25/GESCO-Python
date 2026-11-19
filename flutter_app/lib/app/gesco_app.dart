@@ -125,7 +125,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) => Card(child: Padding(
     padding: const EdgeInsets.all(18),
     child: Row(children: [
-      Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.blue.withOpacity(.10), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: AppTheme.blue)),
+      Container(width: 44, height: 44, decoration: BoxDecoration(color: AppTheme.blue.withValues(alpha: .10), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: AppTheme.blue)),
       const SizedBox(width: 13),
       Expanded(child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: const TextStyle(color: AppTheme.muted, fontSize: 12, fontWeight: FontWeight.w600)),
