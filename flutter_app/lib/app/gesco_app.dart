@@ -40,7 +40,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       page = ManagementPage(database: db, section: GescoSection.subjects);
     } else if (selected == 7) {
       page = ManagementPage(database: db, section: GescoSection.years);
-    } else if (selected == 4) {\n      page = GradesPage(database: db);\n    } else if (selected == 0) {
+    } else if (selected == 4) {
+      page = GradesPage(database: db);
+    } else if (selected == 5) {
+      page = RankingsPage(database: db);
+    } else if (selected == 6) {
+      page = TeacherSheetPage(database: db);
+    } else if (selected == 8) {
+      page = BulletinsPage(database: db);
+    } else if (selected == 0) {
       page = _DashboardContent(database: db);
     } else {
       page = _ComingSoonPage(title: labels[selected]);
