@@ -13,7 +13,7 @@ from .academic import (
     CYCLES, MONTHS, LYCEE_SERIES, create_academic_class, create_academic_year,
     create_assessment, list_academic_classes, list_academic_years,
     list_assessments, finalize_assessment, save_assessment_grade,
-    list_report_cards, export_report_card_pdf,
+    list_report_cards, export_report_card_pdf, seed_standard_classes,
 )
 from .services import list_students, list_subjects, get_school_settings
 from .annual import generate_annual_report_cards, list_annual_report_cards
@@ -71,13 +71,15 @@ class AcademicPage(QWidget):
         self.class_box = QComboBox()
         self.add_year = QPushButton("＋ Année scolaire")
         self.add_class = QPushButton("＋ Classe")
+        self.seed_classes = QPushButton("Créer les classes types du cycle")
         self.add_session = QPushButton("＋ Évaluation")
         self.add_year.clicked.connect(self.create_year)
         self.add_class.clicked.connect(self.create_class)
+        self.seed_classes.clicked.connect(self.create_standard_classes)
         self.add_session.clicked.connect(self.create_session)
         for widget in (QLabel("Cycle"), self.cycle, QLabel("Année"), self.year,
                        QLabel("Classe"), self.class_box, self.add_year,
-                       self.add_class, self.add_session):
+                       self.add_class, self.seed_classes, self.add_session):
             toolbar.addWidget(widget)
         layout.addLayout(toolbar)
 
@@ -438,3 +440,19 @@ class AcademicPage(QWidget):
             )
         except (ValueError, sqlite3.IntegrityError) as exc:
             QMessageBox.warning(self, "Modèle invalide", str(exc))
+
+
+    def create_standard_classes(self):
+        cycle_code = self.cycle.currentData()
+        if not cycle_code:
+            QMessageBox.information(self, "Cycle requis", "Sélectionnez Primaire, Collège ou Lycée.")
+            return
+        try:
+            count = seed_standard_classes(cycle_code)
+            self.refresh()
+            QMessageBox.information(
+                self, "Classes types",
+                f"{count} classe(s) ajoutée(s). Les classes déjà existantes ont été conservées."
+            )
+        except (ValueError, sqlite3.IntegrityError) as exc:
+            QMessageBox.warning(self, "Création impossible", str(exc))
