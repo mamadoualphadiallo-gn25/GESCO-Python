@@ -384,13 +384,19 @@ def list_report_cards(session_id: int, report_type: str = ""):
 
 
 def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
-                           school_name: str = "Mon établissement") -> Path:
+                           school_name: str = "Mon établissement",
+                           template: dict[str, Any] | None = None) -> Path:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import getSampleStyleSheet
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
     from xml.sax.saxutils import escape
 
+    template = template or {}
+    header_color = colors.HexColor(template.get("header_color", "#20365f"))
+    show_coefficients = template.get("show_coefficients", True)
+    show_comments = template.get("show_comments", True)
+    show_rank = template.get("show_rank", True)
     styles = getSampleStyleSheet()
     doc = SimpleDocTemplate(str(destination), pagesize=A4, rightMargin=36, leftMargin=36,
                             topMargin=32, bottomMargin=32)
@@ -405,13 +411,31 @@ def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
     if student:
         story.append(Paragraph(f'Élève : {escape(str(student.get("name","")))} '
                                f'({escape(str(student.get("matricule","")))})', styles["Heading2"]))
-    data = [["Matière", "Note", "Coefficient", "Statut", "Appréciation"]]
+    headers = ["Matière", "Note"]
+    if show_coefficients:
+        headers.append("Coefficient")
+    headers.append("Statut")
+    if show_comments:
+        headers.append("Appréciation")
+    data = [headers]
     for row in snapshot.get("subjects", []):
         score = "—" if row["score"] is None else f'{row["score"]:.2f}/{snapshot.get("grading_scale",20):g}'
-        data.append([row["name"], score, str(row["coefficient"]), row["status"], row.get("comment","")])
-    table = Table(data, repeatRows=1, colWidths=[145, 65, 65, 65, 155])
+        values = [row["name"], score]
+        if show_coefficients:
+            values.append(str(row["coefficient"]))
+        values.append(row["status"])
+        if show_comments:
+            values.append(row.get("comment",""))
+        data.append(values)
+    widths = [175, 75]
+    if show_coefficients:
+        widths.append(65)
+    widths.append(65)
+    if show_comments:
+        widths.append(115)
+    table = Table(data, repeatRows=1, colWidths=widths)
     table.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#20365f")),
+        ("BACKGROUND",(0,0),(-1,0),header_color),
         ("TEXTCOLOR",(0,0),(-1,0),colors.white),
         ("GRID",(0,0),(-1,-1),.4,colors.HexColor("#d8deea")),
         ("ROWBACKGROUNDS",(0,1),(-1,-1),[colors.white,colors.HexColor("#f2f5fa")]),
@@ -440,7 +464,10 @@ def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
                   Paragraph(f'Moyenne générale : {snapshot.get("average") if snapshot.get("average") is not None else "Non calculable"} / 20',
                             styles["Heading2"]),
                   Paragraph(f'Rang : {snapshot.get("rank") or "Non classé"} / {snapshot.get("class_size","—")}',
-                            styles["Normal"])]
+                            styles["Normal"])] if show_rank else
+                 [Spacer(1, 12), Paragraph(
+                     f'Moyenne générale : {snapshot.get("average") if snapshot.get("average") is not None else "Non calculable"} / 20',
+                     styles["Heading2"])]
     else:
         story += [Spacer(1, 12),
                   Paragraph(f'Effectif : {snapshot.get("student_count",0)} | '
