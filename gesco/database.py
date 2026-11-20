@@ -62,6 +62,9 @@ def initialize_database() -> None:
         CREATE INDEX IF NOT EXISTS idx_students_class ON students(class_id);
         CREATE INDEX IF NOT EXISTS idx_grades_student_period ON grades(student_id, period);
         """)
+    # Migration additive : aucune table ni donnée historique n'est supprimée.
+    from .academic import initialize_academic_schema
+    initialize_academic_schema()
 
 
 def fetch_one(query: str, params: tuple = ()):

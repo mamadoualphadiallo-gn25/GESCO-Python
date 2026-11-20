@@ -9,6 +9,7 @@ from .subjects import SubjectsPage
 from .grades import GradesPage
 from .settings import SettingsPage
 from .results_page import ResultsPage
+from .academic_page import AcademicPage
 
 
 APP_STYLE = """
@@ -81,9 +82,11 @@ class MainWindow(QMainWindow):
         self.subjects = SubjectsPage()
         self.grades = GradesPage()
         self.results = ResultsPage()
+        self.academic = AcademicPage()
         self.settings = SettingsPage()
         self.page_widgets = [self.dashboard, self.students, self.classes,
-                             self.subjects, self.grades, self.results, self.settings]
+                             self.subjects, self.grades, self.results,
+                             self.academic, self.settings]
         for page in self.page_widgets:
             self.pages.addWidget(page)
 
@@ -91,7 +94,7 @@ class MainWindow(QMainWindow):
         nav_items = [
             ("▦   Tableau de bord", 0), ("♙   Élèves", 1), ("▤   Classes", 2),
             ("▧   Matières", 3), ("✎   Notes", 4), ("▥   Résultats", 5),
-            ("⚙   Paramètres", 6)
+            ("◫   Cycles et bulletins", 6), ("⚙   Paramètres", 7)
         ]
         for label, index in nav_items:
             button = QPushButton(label)
@@ -159,9 +162,9 @@ class MainWindow(QMainWindow):
         self.stat_values = []
         stats = [
             ("ÉLÈVES INSCRITS", "SELECT COUNT(*) FROM students WHERE active=1", "Effectif actif"),
-            ("CLASSES", "SELECT COUNT(*) FROM classes", "Groupes pédagogiques"),
+            ("CLASSES", "SELECT COUNT(*) FROM classes WHERE archived=0", "Groupes pédagogiques"),
             ("MATIÈRES", "SELECT COUNT(*) FROM subjects", "Disciplines enregistrées"),
-            ("NOTES SAISIES", "SELECT COUNT(*) FROM grades", "Évaluations enregistrées"),
+            ("NOTES SAISIES", "SELECT COUNT(*) FROM grades", "Évaluations historiques"),
         ]
         for label, query, detail in stats:
             card = QFrame()
@@ -197,7 +200,7 @@ class MainWindow(QMainWindow):
         actions = QHBoxLayout()
         for label, index in [
             ("＋  Inscrire un élève", 1), ("▤  Gérer les classes", 2),
-            ("✎  Saisir des notes", 4), ("▥  Voir les résultats", 5)
+            ("✎  Saisir des notes", 4), ("◫  Cycles et bulletins", 6)
         ]:
             button = QPushButton(label)
             button.setMinimumHeight(48)
