@@ -460,14 +460,15 @@ def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
         ]))
         story.append(rank_table)
     if student:
-        story += [Spacer(1, 12),
-                  Paragraph(f'Moyenne générale : {snapshot.get("average") if snapshot.get("average") is not None else "Non calculable"} / 20',
-                            styles["Heading2"]),
-                  Paragraph(f'Rang : {snapshot.get("rank") or "Non classé"} / {snapshot.get("class_size","—")}',
-                            styles["Normal"])] if show_rank else
-                 [Spacer(1, 12), Paragraph(
-                     f'Moyenne générale : {snapshot.get("average") if snapshot.get("average") is not None else "Non calculable"} / 20',
-                     styles["Heading2"])]
+        story.append(Spacer(1, 12))
+        average_label = snapshot.get("average")
+        average_text = average_label if average_label is not None else "Non calculable"
+        story.append(Paragraph(f"Moyenne générale : {average_text} / 20", styles["Heading2"]))
+        if show_rank:
+            story.append(Paragraph(
+                f'Rang : {snapshot.get("rank") or "Non classé"} / {snapshot.get("class_size","—")}',
+                styles["Normal"]
+            ))
     else:
         story += [Spacer(1, 12),
                   Paragraph(f'Effectif : {snapshot.get("student_count",0)} | '
