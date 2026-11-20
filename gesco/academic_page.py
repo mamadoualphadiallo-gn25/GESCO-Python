@@ -306,7 +306,7 @@ class AcademicPage(QWidget):
             return
         try:
             settings = get_school_settings()
-            export_report_card_pdf(json.loads(reports[-1]["snapshot_json"]), path,
+            export_report_card_pdf(json.loads(reports[0]["snapshot_json"]), path,
                                    settings["school_name"], get_default_template(session["cycle_code"]))
             QMessageBox.information(self, "Export PDF", "Le récapitulatif PDF a été créé.")
         except Exception as exc:
@@ -325,8 +325,9 @@ class AcademicPage(QWidget):
         for row in reports:
             snapshot = json.loads(row["snapshot_json"])
             label = f'{snapshot["student"]["name"]} — {snapshot["student"]["matricule"]}'
-            choices.append(label)
-            by_label[label] = snapshot
+            if label not in by_label:
+                choices.append(label)
+                by_label[label] = snapshot
         selected, ok = QInputDialog.getItem(self, "Bulletin individuel", "Élève :", choices, 0, False)
         if not ok:
             return
