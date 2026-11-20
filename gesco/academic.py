@@ -107,6 +107,11 @@ def initialize_academic_schema() -> None:
         CREATE INDEX IF NOT EXISTS idx_report_cards_session
             ON report_cards(session_id, report_type, student_id);
         """)
+        report_columns = _columns(db, "report_cards")
+        if "class_id" not in report_columns:
+            db.execute("ALTER TABLE report_cards ADD COLUMN class_id INTEGER REFERENCES classes(id)")
+        if "academic_year_id" not in report_columns:
+            db.execute("ALTER TABLE report_cards ADD COLUMN academic_year_id INTEGER REFERENCES academic_years(id)")
         for code, data in CYCLES.items():
             db.execute(
                 "INSERT INTO academic_cycles(code,label,term_count) VALUES(?,?,?) "
@@ -353,17 +358,18 @@ def finalize_assessment(session_id: int) -> dict[str, Any]:
                 (session_id, item["student"]["id"]),
             ).fetchone()["v"]
             db.execute(
-                "INSERT INTO report_cards(session_id,student_id,report_type,version,snapshot_json) VALUES(?,?,'student',?,?)",
+                "INSERT INTO report_cards(session_id,student_id,report_type,version,snapshot_json,class_id,academic_year_id) VALUES(?,?,'student',?,?,?,?)",
                 (session_id, item["student"]["id"], int(existing) + 1,
-                 json.dumps(item, ensure_ascii=False)),
+                 json.dumps(item, ensure_ascii=False), session["class_id"], session["academic_year_id"]),
             )
         existing = db.execute(
             "SELECT COALESCE(MAX(version),0) AS v FROM report_cards WHERE session_id=? AND report_type='class'",
             (session_id,),
         ).fetchone()["v"]
         db.execute(
-            "INSERT INTO report_cards(session_id,student_id,report_type,version,snapshot_json) VALUES(?,NULL,'class',?,?)",
-            (session_id, int(existing) + 1, json.dumps(summary, ensure_ascii=False)),
+            "INSERT INTO report_cards(session_id,student_id,report_type,version,snapshot_json,class_id,academic_year_id) VALUES(?,NULL,'class',?,?,?,?)",
+            (session_id, int(existing) + 1, json.dumps(summary, ensure_ascii=False),
+             session["class_id"], session["academic_year_id"]),
         )
         return summary
 
