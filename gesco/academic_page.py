@@ -16,6 +16,7 @@ from .academic import (
     list_report_cards, export_report_card_pdf,
 )
 from .services import list_students, list_subjects, get_school_settings
+from .annual import generate_annual_report_cards, list_annual_report_cards
 
 
 class AcademicClassDialog(QDialog):
@@ -93,12 +94,20 @@ class AcademicPage(QWidget):
         self.finalize_button = QPushButton("Valider et générer les bulletins")
         self.export_class_button = QPushButton("Exporter le récapitulatif PDF")
         self.export_student_button = QPushButton("Exporter un bulletin individuel")
+        self.annual_button = QPushButton("Générer les bulletins annuels")
+        self.export_annual_class_button = QPushButton("Exporter le bilan annuel")
+        self.export_annual_student_button = QPushButton("Exporter un bulletin annuel")
         self.grade_button.clicked.connect(self.enter_grade)
         self.finalize_button.clicked.connect(self.finalize)
         self.export_class_button.clicked.connect(self.export_class)
         self.export_student_button.clicked.connect(self.export_student)
+        self.annual_button.clicked.connect(self.generate_annual)
+        self.export_annual_class_button.clicked.connect(self.export_annual_class)
+        self.export_annual_student_button.clicked.connect(self.export_annual_student)
         for button in (self.grade_button, self.finalize_button,
-                       self.export_class_button, self.export_student_button):
+                       self.export_class_button, self.export_student_button,
+                       self.annual_button, self.export_annual_class_button,
+                       self.export_annual_student_button):
             actions.addWidget(button)
         layout.addLayout(actions)
         self.refresh()
@@ -324,5 +333,76 @@ class AcademicPage(QWidget):
             settings = get_school_settings()
             export_report_card_pdf(by_label[selected], path, settings["school_name"])
             QMessageBox.information(self, "Export PDF", "Le bulletin individuel a été créé.")
+        except Exception as exc:
+            QMessageBox.critical(self, "Erreur PDF", str(exc))
+
+
+    def generate_annual(self):
+        class_id, year_id = self.class_box.currentData(), self.year.currentData()
+        if class_id is None or year_id is None:
+            QMessageBox.information(self, "Sélection", "Sélectionnez une classe et une année scolaire.")
+            return
+        answer = QMessageBox.question(
+            self, "Bulletins annuels",
+            "Générer les bulletins annuels à partir de toutes les évaluations finalisées ?"
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            summary = generate_annual_report_cards(class_id, year_id)
+            QMessageBox.information(
+                self, "Bulletins annuels",
+                f'{len(summary["students"])} bulletins individuels et un bilan annuel de classe ont été archivés.'
+            )
+        except (ValueError, sqlite3.IntegrityError) as exc:
+            QMessageBox.warning(self, "Génération impossible", str(exc))
+
+    def export_annual_class(self):
+        class_id, year_id = self.class_box.currentData(), self.year.currentData()
+        if class_id is None or year_id is None:
+            QMessageBox.information(self, "Sélection", "Sélectionnez une classe et une année scolaire.")
+            return
+        reports = list_annual_report_cards(class_id, year_id, "class")
+        if not reports:
+            QMessageBox.information(self, "Aucun bilan", "Générez d'abord les bulletins annuels.")
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Exporter le bilan annuel",
+                                               "bilan_annuel_classe.pdf", "PDF (*.pdf)")
+        if not path:
+            return
+        try:
+            settings = get_school_settings()
+            export_report_card_pdf(json.loads(reports[-1]["snapshot_json"]), path,
+                                   settings["school_name"])
+            QMessageBox.information(self, "Export PDF", "Le bilan annuel a été créé.")
+        except Exception as exc:
+            QMessageBox.critical(self, "Erreur PDF", str(exc))
+
+    def export_annual_student(self):
+        class_id, year_id = self.class_box.currentData(), self.year.currentData()
+        if class_id is None or year_id is None:
+            QMessageBox.information(self, "Sélection", "Sélectionnez une classe et une année scolaire.")
+            return
+        reports = list_annual_report_cards(class_id, year_id, "annual")
+        if not reports:
+            QMessageBox.information(self, "Aucun bulletin", "Générez d'abord les bulletins annuels.")
+            return
+        choices, by_label = [], {}
+        for row in reports:
+            snapshot = json.loads(row["snapshot_json"])
+            label = f'{snapshot["student"]["name"]} — {snapshot["student"]["matricule"]}'
+            choices.append(label)
+            by_label[label] = snapshot
+        selected, ok = QInputDialog.getItem(self, "Bulletin annuel", "Élève :", choices, 0, False)
+        if not ok:
+            return
+        path, _ = QFileDialog.getSaveFileName(self, "Exporter le bulletin annuel",
+                                               "bulletin_annuel.pdf", "PDF (*.pdf)")
+        if not path:
+            return
+        try:
+            settings = get_school_settings()
+            export_report_card_pdf(by_label[selected], path, settings["school_name"])
+            QMessageBox.information(self, "Export PDF", "Le bulletin annuel a été créé.")
         except Exception as exc:
             QMessageBox.critical(self, "Erreur PDF", str(exc))
