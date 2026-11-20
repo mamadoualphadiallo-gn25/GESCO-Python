@@ -17,6 +17,7 @@ from .academic import (
 )
 from .services import list_students, list_subjects, get_school_settings
 from .annual import generate_annual_report_cards, list_annual_report_cards
+from .templates import save_template, get_default_template
 
 
 class AcademicClassDialog(QDialog):
@@ -97,6 +98,7 @@ class AcademicPage(QWidget):
         self.annual_button = QPushButton("Générer les bulletins annuels")
         self.export_annual_class_button = QPushButton("Exporter le bilan annuel")
         self.export_annual_student_button = QPushButton("Exporter un bulletin annuel")
+        self.template_button = QPushButton("Personnaliser les modèles")
         self.grade_button.clicked.connect(self.enter_grade)
         self.finalize_button.clicked.connect(self.finalize)
         self.export_class_button.clicked.connect(self.export_class)
@@ -104,10 +106,11 @@ class AcademicPage(QWidget):
         self.annual_button.clicked.connect(self.generate_annual)
         self.export_annual_class_button.clicked.connect(self.export_annual_class)
         self.export_annual_student_button.clicked.connect(self.export_annual_student)
+        self.template_button.clicked.connect(self.create_template)
         for button in (self.grade_button, self.finalize_button,
                        self.export_class_button, self.export_student_button,
                        self.annual_button, self.export_annual_class_button,
-                       self.export_annual_student_button):
+                       self.export_annual_student_button, self.template_button):
             actions.addWidget(button)
         layout.addLayout(actions)
         self.refresh()
@@ -302,7 +305,7 @@ class AcademicPage(QWidget):
         try:
             settings = get_school_settings()
             export_report_card_pdf(json.loads(reports[-1]["snapshot_json"]), path,
-                                   settings["school_name"])
+                                   settings["school_name"], get_default_template(session["cycle_code"]))
             QMessageBox.information(self, "Export PDF", "Le récapitulatif PDF a été créé.")
         except Exception as exc:
             QMessageBox.critical(self, "Erreur PDF", str(exc))
@@ -331,7 +334,8 @@ class AcademicPage(QWidget):
             return
         try:
             settings = get_school_settings()
-            export_report_card_pdf(by_label[selected], path, settings["school_name"])
+            export_report_card_pdf(by_label[selected], path, settings["school_name"],
+                                   get_default_template(session["cycle_code"]))
             QMessageBox.information(self, "Export PDF", "Le bulletin individuel a été créé.")
         except Exception as exc:
             QMessageBox.critical(self, "Erreur PDF", str(exc))
@@ -372,8 +376,10 @@ class AcademicPage(QWidget):
             return
         try:
             settings = get_school_settings()
+            cls = next((item for item in list_academic_classes() if item["id"] == class_id), None)
+            template = get_default_template(cls["cycle_code"]) if cls else {}
             export_report_card_pdf(json.loads(reports[-1]["snapshot_json"]), path,
-                                   settings["school_name"])
+                                   settings["school_name"], template)
             QMessageBox.information(self, "Export PDF", "Le bilan annuel a été créé.")
         except Exception as exc:
             QMessageBox.critical(self, "Erreur PDF", str(exc))
@@ -402,7 +408,33 @@ class AcademicPage(QWidget):
             return
         try:
             settings = get_school_settings()
-            export_report_card_pdf(by_label[selected], path, settings["school_name"])
+            cls = next((item for item in list_academic_classes() if item["id"] == class_id), None)
+            template = get_default_template(cls["cycle_code"]) if cls else {}
+            export_report_card_pdf(by_label[selected], path, settings["school_name"], template)
             QMessageBox.information(self, "Export PDF", "Le bulletin annuel a été créé.")
         except Exception as exc:
             QMessageBox.critical(self, "Erreur PDF", str(exc))
+
+
+    def create_template(self):
+        cycle_code = self.cycle.currentData()
+        if not cycle_code:
+            QMessageBox.information(self, "Modèle", "Sélectionnez d'abord un cycle précis.")
+            return
+        name, ok = QInputDialog.getText(self, "Modèle de bulletin", "Nom du nouveau modèle :")
+        if not ok:
+            return
+        color, ok = QInputDialog.getText(
+            self, "Couleur du modèle", "Couleur principale hexadécimale :",
+            text="#20365f"
+        )
+        if not ok:
+            return
+        try:
+            save_template(cycle_code, name, color, True, True, True, True)
+            QMessageBox.information(
+                self, "Modèle enregistré",
+                "Le modèle est enregistré et devient le modèle par défaut de ce cycle."
+            )
+        except (ValueError, sqlite3.IntegrityError) as exc:
+            QMessageBox.warning(self, "Modèle invalide", str(exc))
