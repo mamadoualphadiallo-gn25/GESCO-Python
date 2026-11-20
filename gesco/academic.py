@@ -419,6 +419,22 @@ def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
         ("TOPPADDING",(0,0),(-1,-1),7),("BOTTOMPADDING",(0,0),(-1,-1),7),
     ]))
     story.append(table)
+    if not student and snapshot.get("students"):
+        ranking = [["Rang", "Matricule", "Élève", "Moyenne / 20"]]
+        for item in sorted(snapshot["students"],
+                           key=lambda x: (x.get("rank") or 999999, x["student"]["name"])):
+            ranking.append([item.get("rank") or "—", item["student"]["matricule"],
+                            item["student"]["name"],
+                            item.get("average") if item.get("average") is not None else "—"])
+        rank_table = Table(ranking, repeatRows=1, colWidths=[45, 95, 245, 90])
+        rank_table.setStyle(TableStyle([
+            ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#20365f")),
+            ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+            ("GRID",(0,0),(-1,-1),.4,colors.HexColor("#d8deea")),
+            ("ROWBACKGROUNDS",(0,1),(-1,-1),[colors.white,colors.HexColor("#f2f5fa")]),
+            ("TOPPADDING",(0,0),(-1,-1),6),("BOTTOMPADDING",(0,0),(-1,-1),6),
+        ]))
+        story.append(rank_table)
     if student:
         story += [Spacer(1, 12),
                   Paragraph(f'Moyenne générale : {snapshot.get("average") if snapshot.get("average") is not None else "Non calculable"} / 20',
