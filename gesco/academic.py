@@ -475,3 +475,30 @@ def export_report_card_pdf(snapshot: dict[str, Any], destination: str | Path,
                             styles["Heading2"])]
     doc.build(story)
     return Path(destination)
+
+
+def seed_standard_classes(cycle_code: str) -> int:
+    """Ajoute les classes-types du cycle sans doublonner ni toucher aux classes existantes."""
+    if cycle_code not in CYCLES:
+        raise ValueError("Cycle scolaire invalide.")
+    if cycle_code == "primaire":
+        levels = PRIMARY_LEVELS
+        entries = [(level, level, "") for level in levels]
+    elif cycle_code == "college":
+        levels = COLLEGE_LEVELS
+        entries = [(level, level, "") for level in levels]
+    else:
+        entries = [
+            (f"{level} — {series}", level, series)
+            for level in LYCEE_LEVELS for series in LYCEE_SERIES
+        ]
+    created = 0
+    with get_connection() as db:
+        for name, level, series in entries:
+            cursor = db.execute(
+                """INSERT OR IGNORE INTO classes(name,level,cycle_code,series_name)
+                   VALUES(?,?,?,?)""",
+                (name, level, cycle_code, series)
+            )
+            created += cursor.rowcount
+    return created
